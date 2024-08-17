@@ -1,0 +1,18 @@
+#
+# BUILD STAGE
+
+FROM maven:3.6.0-jdk-11-slim AS build  
+COPY petclinic-app/src /usr/src/app/src  
+COPY petclinic-app/pom.xml /usr/src/app  
+RUN mvn -f /usr/src/app/pom.xml clean package
+
+
+# PACKAGE STAGE
+
+FROM openjdk:11-jre-slim 
+COPY --from=build /usr/src/app/target/spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar /usr/app/spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar  
+EXPOSE 80
+#CMD ["java","-jar","/usr/app/spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar", "--server.port=8181"]  
+
+# Set the command to run the application
+ENTRYPOINT ["java", "-jar", "/usr/app/spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar", "--server.port=8080"]
