@@ -2,15 +2,12 @@ pipeline {
     agent any
 
     tools {
-        //jfrog 'jfrog'
         maven 'maven3.9.9'
         jdk 'jdk8'
-        //scannerHome 'sonar'
     }
 
     environment {
-        //DOCKER_IMAGE_NAME = "cloudsheger.jfrog.io/docker/petclinic:1.0"
-		sonar_token = credentials('jenkins-sonar-token') // SONAR_TOKEN_ID should be the ID of the Jenkins credentials storing your SonarQube token
+        sonar_token = credentials('jenkins-sonar-token') // SONAR_TOKEN_ID should be the ID of the Jenkins credentials storing your SonarQube token
     }
 
     parameters {
@@ -28,21 +25,26 @@ pipeline {
 
         stage('Compile and Test') {
             steps {
-                sh 'mvn clean install -DskipTests=true'
+                dir('petclinic-app') { // Ensure you are in the correct directory
+                    sh 'mvn clean install -DskipTests=true'
+                }
             }
         }
 
         stage('Sonar Static Code Analysis') {
             steps {
-			 withCredentials([string(credentialsId: 'SONAR_TOKEN_ID', variable: 'sonar_token')]) {
-                sh "mvn clean verify sonar:sonar \
-                    -Dsonar.projectKey=${projectKey} \
-                    -Dsonar.projectName='${projectName}' \
-                    -Dsonar.host.url=${sonarHostUrl} \
-                    -Dsonar.login=${sonar_token}"
+                dir('petclinic-app') { // Ensure SonarQube runs within the project directory
+                    withCredentials([string(credentialsId: 'jenkins-sonar-token', variable: 'sonar_token')]) {
+                        sh """
+                        mvn sonar:sonar \
+                            -Dsonar.projectKey=${params.ProjectKey} \
+                            -Dsonar.projectName='${params.ProjectName}' \
+                            -Dsonar.host.url=${params.SonarHostUrl} \
+                            -Dsonar.login=${sonar_token}
+                        """
+                    }
                 }
             }
-		}
-        
+        }
     }
 }
