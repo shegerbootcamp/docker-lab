@@ -10,7 +10,7 @@ pipeline {
 
     environment {
         //DOCKER_IMAGE_NAME = "cloudsheger.jfrog.io/docker/petclinic:1.0"
-		sonar_token = credentials('sonar-jenkins-token') // SONAR_TOKEN_ID should be the ID of the Jenkins credentials storing your SonarQube token
+		sonar_token = credentials('jenkins-sonar-token') // SONAR_TOKEN_ID should be the ID of the Jenkins credentials storing your SonarQube token
     }
 
     parameters {
