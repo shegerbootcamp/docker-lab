@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    tools {
+        //jfrog 'jfrog'
+        maven 'maven3.9.9'
+        jdk 'jdk8'
+        scannerHome 'sonar'
+    }
+
+    environment {
+        //DOCKER_IMAGE_NAME = "cloudsheger.jfrog.io/docker/petclinic:1.0"
+		sonar_token = credentials('sonar-jenkins-token') // SONAR_TOKEN_ID should be the ID of the Jenkins credentials storing your SonarQube token
+    }
+
+    parameters {
+        string(name: 'ProjectKey', defaultValue: 'petclinic', description: 'SonarQube project key')
+        string(name: 'ProjectName', defaultValue: 'petclinic', description: 'SonarQube project name')
+        string(name: 'SonarHostUrl', defaultValue: 'http://192.168.92.182:9000', description: 'SonarQube server URL')
+    }
+
+    stages {
+        stage('Clone') {
+            steps {
+                git branch: 'master', url: 'https://github.com/shegerbootcamp/docker-lab.git'
+            }
+        }
+
+        stage('Compile and Test') {
+            steps {
+                sh 'mvn clean install -DskipTests=true'
+            }
+        }
+
+        stage('Sonar Static Code Analysis') {
+            steps {
+			 withCredentials([string(credentialsId: 'SONAR_TOKEN_ID', variable: 'sonar_token')]) {
+                sh "mvn clean verify sonar:sonar \
+                    -Dsonar.projectKey=${projectKey} \
+                    -Dsonar.projectName='${projectName}' \
+                    -Dsonar.host.url=${sonarHostUrl} \
+                    -Dsonar.login=${sonar_token}"
+                }
+            }
+		}
+        
+    }
+}
