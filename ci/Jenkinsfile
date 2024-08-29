@@ -5,7 +5,7 @@ pipeline {
         //jfrog 'jfrog'
         maven 'maven3.9.9'
         jdk 'jdk8'
-        scannerHome 'sonar'
+        //scannerHome 'sonar'
     }
 
     environment {
