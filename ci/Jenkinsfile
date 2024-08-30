@@ -2,12 +2,14 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven3.9.9'
-        jdk 'jdk8'
+        maven 'maven3.9.9' // Use Maven version 3.9.9
+        jdk 'jdk8' // Use JDK 8
     }
 
     environment {
         sonar_token = credentials('jenkins-sonar-token') // SONAR_TOKEN_ID should be the ID of the Jenkins credentials storing your SonarQube token
+       // slackChannel = '#jenkins-build-sonar' // Replace with your Slack channel
+       // slackCredentialId = 'your-slack-credential-id' // Replace with your Slack credentials ID
     }
 
     parameters {
@@ -20,14 +22,16 @@ pipeline {
         stage('Clone') {
             steps {
                 git branch: 'master', url: 'https://github.com/shegerbootcamp/docker-lab.git'
+                //slackSend(channel: slackChannel, message: "Cloning repository completed.", color: "good")
             }
         }
 
-        stage('Compile and Test') {
+        stage('Building Petclinic App') {
             steps {
                 dir('petclinic-app') { // Ensure you are in the correct directory
                     sh 'mvn clean install -DskipTests=true'
                 }
+                //slackSend(channel: slackChannel, message: "Code compilation and testing completed.", color: "good")
             }
         }
 
@@ -44,6 +48,7 @@ pipeline {
                         """
                     }
                 }
+                //slackSend(channel: slackChannel, message: "SonarQube analysis completed.", color: "good")
             }
         }
     }
