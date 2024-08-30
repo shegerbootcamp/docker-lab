@@ -8,7 +8,7 @@ pipeline {
 
     environment {
         registry = "shegerbootcamp/petclinic-java" // Docker image name to be used
-        registryCredential = 'jenkins-dockerhub-integration' // Jenkins credential ID for DockerHub
+        registryCredential = 'DOCKERHUB-ACCESS-TOKEN' // Jenkins credential ID for DockerHub
         dockerImage = '' // Placeholder for Docker image object
     }
 
@@ -37,9 +37,11 @@ pipeline {
         
         stage('Build Docker Image') {
             steps {
-                script {
-                    dockerImage = docker.build("${registry}:latest") // Build the Docker image with the tag 'latest'
-                }
+               dir('petclinic-app') { 
+                 script {
+                     dockerImage = docker.build("${registry}:latest") // Build the Docker image with the tag 'latest'
+                 }
+               }
             }
         }
         
