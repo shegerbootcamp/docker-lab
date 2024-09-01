@@ -1,37 +1,42 @@
 pipeline {
     agent any
-
-    tools {
-        maven 'maven3.9.9' // Use Maven version 3.9.9
-        jdk 'java' // Use JDK 8
-    }
-
-    environment {
-        sonar_token = credentials('jenkins-sonar-token') // SONAR_TOKEN_ID should be the ID of the Jenkins credentials storing your SonarQube token
-       // slackChannel = '#jenkins-build-sonar' // Replace with your Slack channel
-       // slackCredentialId = 'your-slack-credential-id' // Replace with your Slack credentials ID
-    }
-
+    
     parameters {
         string(name: 'ProjectKey', defaultValue: 'petclinic', description: 'SonarQube project key')
         string(name: 'ProjectName', defaultValue: 'petclinic', description: 'SonarQube project name')
         string(name: 'SonarHostUrl', defaultValue: 'http://192.168.92.182:9000', description: 'SonarQube server URL')
+        string(name: 'SlackChannel', defaultValue: '#jenkins-build-sonar', description: 'Slack channel to send notifications')
+        string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
     }
 
     stages {
-        stage('Clone') {
+        stage('Checkout GitHub Repo') {
             steps {
-                git branch: 'master', url: 'https://github.com/shegerbootcamp/docker-lab.git'
-                //slackSend(channel: slackChannel, message: "Cloning repository completed.", color: "good")
+                git 'https://github.com/shegerbootcamp/docker-lab.git' // Clone the GitHub repository
             }
         }
 
-        stage('Building Petclinic App') {
+        stage('Compile Code') {
             steps {
-                dir('petclinic-app') { // Ensure you are in the correct directory
-                    sh 'mvn clean install -DskipTests=true'
+                dir('petclinic-app') {
+                    sh 'mvn compile' // Compile the code
                 }
-                //slackSend(channel: slackChannel, message: "Code compilation and testing completed.", color: "good")
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir('petclinic-app') {
+                    sh 'mvn test' // Run the tests
+                }
+            }
+        }
+
+        stage('Build Package') {
+            steps {
+                dir('petclinic-app') {
+                    sh 'mvn -Dmaven.test.failure.ignore=true clean package' // Build the package
+                }
             }
         }
 
@@ -48,21 +53,33 @@ pipeline {
                         """
                     }
                 }
-                //slackSend(channel: slackChannel, message: "SonarQube analysis completed.", color: "good")
-            }
-
-            post {
-                
-                // If Maven was able to run the tests, even if some of the test
-                // failed, record the test results and archive the jar file.
-                success {
-                  dir('petclinic-app') {
-                    junit '**/target/surefire-reports/TEST-*.xml'
-                    archiveArtifacts 'target/*.jar'
-                    }
-                }
             }
         }
-        
+    }
+
+    post {
+        success {
+            dir('petclinic-app') {
+                junit '**/target/surefire-reports/TEST-*.xml' // Archive JUnit test results
+                archiveArtifacts 'target/*.jar' // Archive JAR files
+            }
+        }
+
+        always {
+            slackSend (
+                channel: params.SlackChannel, // Use the parameterized Slack channel
+                color: 'good', // or 'danger' based on the build status
+                tokenCredentialId: params.SlackTokenCredentialId, // Use the parameterized Slack token
+                message: "Pipeline Status: ${currentBuild.currentResult} - ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${BUILD_URL}"
+            )
+        }
+
+        cleanup {
+            cleanWs() // Clean up workspace
+        }
+    }
+
+    options {
+        buildDiscarder(logRotator(daysToKeepStr: '3')) // Rotate logs, keep builds for 3 days
     }
 }
