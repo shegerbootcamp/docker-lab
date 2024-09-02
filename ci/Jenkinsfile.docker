@@ -69,4 +69,32 @@ pipeline {
             }
         }
     }
+
+    post {
+        success {
+            slackSend (
+                channel: '#jenkins-build-sonar', // Replace with your desired Slack channel
+                color: 'good', // Green color for successful builds
+                tokenCredentialId: 'SLACK-TOKEN', // Jenkins credential ID for Slack
+                message: "Pipeline Success: ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${BUILD_URL}"
+            )
+        }
+
+        failure {
+            slackSend (
+                channel: '#jenkins-build-sonar', // Replace with your desired Slack channel
+                color: 'danger', // Red color for failed builds
+                tokenCredentialId: 'SLACK-TOKEN', // Jenkins credential ID for Slack
+                message: "Pipeline Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${BUILD_URL}"
+            )
+        }
+
+        cleanup {
+            cleanWs() // Clean up the workspace
+        }
+    }
+
+    options {
+        buildDiscarder(logRotator(daysToKeepStr: '3')) // Rotate logs, keep builds for 3 days
+    }
 }
