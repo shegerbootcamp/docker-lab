@@ -10,6 +10,8 @@ pipeline {
         registry = "shegerbootcamp/petclinic-java" // Docker image name to be used
         registryCredential = 'DOCKERHUB-ACCESS-TOKEN' // Jenkins credential ID for DockerHub
         dockerImage = '' // Placeholder for Docker image object
+        ansibleInventory = 'ansible/deployer/inventory.ini' // Path to your Ansible inventory file
+        ansiblePlaybook = 'ansible/deployer/deploy.yml' // Path to your Ansible playbook
     }
 
     stages {
@@ -18,7 +20,7 @@ pipeline {
                 git 'https://github.com/shegerbootcamp/docker-lab.git' // Clone the Git repository
             }
         }
-        
+
         stage('Compile Code') {
             steps {
                 dir('petclinic-app') { // Change directory to 'petclinic-app'
@@ -26,7 +28,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Build Package') {
             steps {
                 dir('petclinic-app') { // Change directory to 'petclinic-app'
@@ -34,7 +36,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
                dir('petclinic-app') { 
@@ -44,7 +46,7 @@ pipeline {
                }
             }
         }
-        
+
         stage('Publish Docker Image to DockerHub') {
             steps {
                 script {
@@ -54,17 +56,17 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Remove Unused Docker Image') {
             steps {
                 sh "docker rmi ${registry}:latest" // Remove the local Docker image to free up space
             }
         }
-        
-        stage('Deploy Docker Image') {
+
+        stage('Deploy') {
             steps {
                 script {
-                    sh "docker run -d -p 8081:8081 ${registry}:latest" // Deploy the Docker image and map port 8081
+                    sh 'ansible-playbook -i ${ansibleInventory} ${ansiblePlaybook}' // Execute Ansible playbook
                 }
             }
         }

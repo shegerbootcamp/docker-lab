@@ -1,0 +1,21 @@
+
+# tasks file for deployer
+# tasks/main.yml
+- name: Debug Docker image
+  debug:
+    msg: "Docker Image: {{ docker_image }}, Tag: {{ docker_tag }}"
+
+- name: Pull Docker image
+  docker_image:
+    name: "{{ docker_image }}"
+    tag: "{{ docker_tag }}"
+    source: pull
+
+- name: Run Docker container
+  docker_container:
+    name: petclinic
+    image: "{{ docker_image }}:{{ docker_tag }}"
+    state: started
+    restart_policy: always
+    published_ports:
+      - "{{ docker_port }}:8081"
