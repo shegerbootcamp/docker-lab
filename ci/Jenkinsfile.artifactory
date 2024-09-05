@@ -2,78 +2,98 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'artifactory_api_key', defaultValue: '', description: 'Artifactory API Key')
-        string(name: 'jenkins_sonar_token', defaultValue: '', description: 'SonarQube Token')
+        string(name: 'ProjectKey', defaultValue: 'petclinic', description: 'SonarQube project key')
+        string(name: 'ProjectName', defaultValue: 'petclinic', description: 'SonarQube project name')
+        string(name: 'SonarHostUrl', defaultValue: 'http://192.168.92.182:9000', description: 'SonarQube server URL')
+        string(name: 'SlackChannel', defaultValue: '#jenkins-build-sonar', description: 'Slack channel to send notifications')
+        string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
+        string(name: 'ArtifactoryApiKey', defaultValue: 'artifactory_api_key', description: 'Artifactory API Key')
     }
 
     stages {
-        stage('Clone Project') {
+        stage('Checkout GitHub Repo') {
             steps {
-                git 'https://github.com/shegerbootcamp/docker-lab.git'
+                git 'https://github.com/shegerbootcamp/docker-lab.git' // Clone the GitHub repository
             }
         }
 
-        stage('Unit Test') {
+        stage('Compile Code') {
             steps {
                 dir('petclinic-app') {
-                    sh 'mvn test' // Run the unit tests
+                    sh 'mvn compile' // Compile the code
                 }
             }
         }
 
-        stage('SonarQube analysis') {
+        stage('Run Tests') {
             steps {
                 dir('petclinic-app') {
-                    withSonarQubeEnv('SonarScanner') {
+                    sh 'mvn test' // Run the tests
+                }
+            }
+        }
+
+        stage('Build Package') {
+            steps {
+                dir('petclinic-app') {
+                    sh 'mvn -Dmaven.test.failure.ignore=true clean package' // Build the package
+                }
+            }
+        }
+
+        stage('Sonar Static Code Analysis') {
+            steps {
+                dir('petclinic-app') { // Ensure SonarQube runs within the project directory
+                    withCredentials([string(credentialsId: 'jenkins-sonar-token', variable: 'SONAR_TOKEN')]) {
                         sh """
-                            mvn -Dmaven.test.failure.ignore=true -Dcheckstyle.skip sonar:sonar \
-                                -Dsonar.host.url=http://192.168.92.182:9000 \
-                                -Dsonar.projectKey=petclinic \
-                                -Dsonar.token=${params.jenkins_sonar_token} \
-                                -Dsonar.projectName='petclinic'
+                        mvn sonar:sonar \
+                            -Dsonar.projectKey=${params.ProjectKey} \
+                            -Dsonar.projectName='${params.ProjectName}' \
+                            -Dsonar.host.url=${params.SonarHostUrl} \
+                            -Dsonar.login=${SONAR_TOKEN} \
+                            -Dsonar.java.binaries=target/classes
                         """
                     }
                 }
             }
         }
 
-        stage('Build') {
-            steps {
-                dir('petclinic-app') {
-                    sh 'mvn -Dmaven.test.failure.ignore=true -Dcheckstyle.skip clean package'
-                    archiveArtifacts artifacts: 'target/*.jar', allowEmptyArchive: true
-                }
-            }
-        }
-
         stage('Upload to Artifactory') {
             steps {
+              dir('petclinic-app') { 
                 script {
                     def artifactoryUrl = 'https://shegerlab2024.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
-                    def localJarPath = 'petclinic-app/target/*-SNAPSHOT.jar'
-
-                    sh "curl -H 'X-JFrog-Art-Api:${params.artifactory_api_key}' -T ${localJarPath} ${artifactoryUrl}"
+                    def localJarPath = 'target/*-SNAPSHOT.jar'
+                    sh "curl -H 'X-JFrog-Art-Api:${params.ArtifactoryApiKey}' -T ${localJarPath} ${artifactoryUrl}"
                 }
+              }  
             }
         }
     }
 
     post {
-        failure {
-            slackSend(
-                channel: "#jenkins-build-sonar", 
-                tokenCredentialId: "SLACK-TOKEN", 
-                color: "danger", 
-                message: "${custom_msg()}"
+        success {
+            dir('petclinic-app') {
+                junit '**/target/surefire-reports/TEST-*.xml' // Archive JUnit test results
+                archiveArtifacts 'target/*.jar' // Archive JAR files
+            }
+        }
+
+        always {
+            slackSend (
+                channel: params.SlackChannel, // Use the parameterized Slack channel
+                color: (currentBuild.currentResult == 'SUCCESS') ? 'good' : 'danger', // Green on success, red on failure
+                tokenCredentialId: params.SlackTokenCredentialId, // Use the parameterized Slack token
+                message: "Pipeline Status: ${currentBuild.currentResult} - ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${BUILD_URL}"
             )
         }
-    }
-}
 
-def custom_msg() {
-    def JENKINS_URL = "http://192.168.92.181:8080"
-    def JOB_NAME = env.JOB_NAME
-    def BUILD_ID = env.BUILD_ID
-    def JENKINS_LOG = "FAILED: Job [${JOB_NAME}] Logs: ${JENKINS_URL}/job/${JOB_NAME}/${BUILD_ID}/consoleText"
-    return JENKINS_LOG
+        cleanup {
+            cleanWs() // Clean up workspace
+        }
+    }
+
+    options {
+        buildDiscarder(logRotator(daysToKeepStr: '3')) // Rotate logs, keep builds for 3 days
+    }
 }
