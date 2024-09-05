@@ -1,21 +1,28 @@
+---
 
-# tasks file for deployer
-# tasks/main.yml
-- name: Debug Docker image
-  debug:
-    msg: "Docker Image: {{ docker_image }}, Tag: {{ docker_tag }}"
+    - name: Check if petclinic container is running
+      shell: docker ps -q --filter "name=petclinic"
+      register: petclinic_running
+      changed_when: false
 
-- name: Pull Docker image
-  docker_image:
-    name: "{{ docker_image }}"
-    tag: "{{ docker_tag }}"
-    source: pull
+    - name: Stop and remove the petclinic container if running
+      shell: |
+        docker stop petclinic && docker rm petclinic
+      when: petclinic_running.stdout != ""
 
-- name: Run Docker container
-  docker_container:
-    name: petclinic
-    image: "{{ docker_image }}:{{ docker_tag }}"
-    state: started
-    restart_policy: always
-    published_ports:
-      - "{{ docker_port }}:8081"
+    - name: Pull the latest petclinic Docker image
+      shell: |
+        jf docker pull {{ docker_image_name }}
+     
+    - name: Run the petclinic Docker container
+      shell: |
+        docker run -d --name petclinic -p {{ app_port }}:8081 {{ docker_image_name }}
+
+    - name: Ensure petclinic container is running
+      shell: docker ps --filter "name=petclinic"
+      register: container_status
+
+    - name: Fail if container is not running
+      fail:
+        msg: "Petclinic container failed to start!"
+      when: container_status.stdout == ""

@@ -7,7 +7,7 @@ pipeline {
         string(name: 'SonarHostUrl', defaultValue: 'http://192.168.92.182:9000', description: 'SonarQube server URL')
         string(name: 'SlackChannel', defaultValue: '#jenkins-build-sonar', description: 'Slack channel to send notifications')
         string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
-        string(name: 'ArtifactoryApiKey', defaultValue: 'artifactory_api_key', description: 'Artifactory API Key')
+        //string(name: 'ArtifactoryApiKey', defaultValue: 'artifactory_api_key', description: 'Artifactory API Key')
     }
 
     stages {
@@ -33,14 +33,6 @@ pipeline {
             }
         }
 
-        stage('Build Package') {
-            steps {
-                dir('petclinic-app') {
-                    sh 'mvn -Dmaven.test.failure.ignore=true clean package' // Build the package
-                }
-            }
-        }
-
         stage('Sonar Static Code Analysis') {
             steps {
                 dir('petclinic-app') { // Ensure SonarQube runs within the project directory
@@ -58,13 +50,22 @@ pipeline {
             }
         }
 
+        stage('Build Package') {
+            steps {
+                dir('petclinic-app') {
+                    jf 'mvn clean package -Dmaven.test.failure.ignore=true' // Build the package
+                }
+            }
+        }
+
         stage('Upload to Artifactory') {
             steps {
               dir('petclinic-app') { 
                 script {
                     def artifactoryUrl = 'https://shegerlab2024.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
                     def localJarPath = 'target/*-SNAPSHOT.jar'
-                    sh "curl -H 'X-JFrog-Art-Api:${params.ArtifactoryApiKey}' -T ${localJarPath} ${artifactoryUrl}"
+
+                     jf 'rt u ${localJarPath} ${artifactoryUrl}'
                 }
               }  
             }
