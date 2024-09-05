@@ -103,6 +103,6 @@ pipeline {
     }
 
     options {
-        buildDiscarder(logRotator(daysToKeepStr: '3')) // Rotate logs, keep builds for 3 days
+        buildDiscarder(logRotator(daysToKeepStr: '1', numToKeepStr: '3')) // Keep 3 builds for 1 day
     }
 }
