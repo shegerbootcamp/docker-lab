@@ -1,0 +1,28 @@
+---
+
+    - name: Check if petclinic container is running
+      shell: docker ps -q --filter "name=petclinic"
+      register: petclinic_running
+      changed_when: false
+
+    - name: Stop and remove the petclinic container if running
+      shell: |
+        docker stop petclinic && docker rm petclinic
+      when: petclinic_running.stdout != ""
+
+    - name: Pull the latest petclinic Docker image
+      shell: |
+        jf docker pull {{ docker_image_name }}
+     
+    - name: Run the petclinic Docker container
+      shell: |
+        docker run -d --name petclinic -p {{ app_port }}:8081 {{ docker_image_name }}
+
+    - name: Ensure petclinic container is running
+      shell: docker ps --filter "name=petclinic"
+      register: container_status
+
+    - name: Fail if container is not running
+      fail:
+        msg: "Petclinic container failed to start!"
+      when: container_status.stdout == ""

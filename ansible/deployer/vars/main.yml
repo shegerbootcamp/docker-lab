@@ -1,0 +1,5 @@
+---
+# vars file for deployer
+docker_image: "shegerbootcamp/petclinic-java"
+docker_tag: "latest"
+docker_port: "8081"
