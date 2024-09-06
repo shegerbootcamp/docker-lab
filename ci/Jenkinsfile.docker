@@ -72,6 +72,7 @@ pipeline {
         stage('Docker Pull & Deploy') {
             steps {
                 script {
+                    docker.withRegistry('', registryCredential) {
                     // Stop any existing container on the same port
                     sh """
                     docker ps -q --filter "name=petclinic" | grep -q . && docker stop petclinic && docker rm petclinic || true
@@ -83,6 +84,7 @@ pipeline {
                     docker run -d -p 8081:8081 -t ${registry}:${dockerTag}
                     """
                 }
+              }
             }
         }
     }
