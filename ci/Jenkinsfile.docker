@@ -12,12 +12,10 @@ pipeline {
     }
 
     environment {
-        registry = "shegerbootcamp/petclinic-java" // Docker image name to be used
+        registry = "shegerbootcamp/petclinic-java" // Docker image name
         registryCredential = 'DOCKERHUB-ACCESS-TOKEN' // Jenkins credential ID for DockerHub
         dockerImage = '' // Placeholder for Docker image object
         dockerTag = "${env.BUILD_NUMBER}" // Use build number as Docker tag
-        //ansibleInventory = 'ansible/deployer/inventory.ini' // Path to your Ansible inventory file
-        //ansiblePlaybook = 'ansible/deployer/deploy.yml' // Path to your Ansible playbook
     }
 
     stages {
@@ -47,6 +45,7 @@ pipeline {
             steps {
                 dir('petclinic-app') {
                     script {
+                        echo "Building Docker image: ${registry}:${dockerTag}"
                         dockerImage = docker.build("${registry}:${dockerTag}") // Build the Docker image with the build number as the tag
                     }
                 }
@@ -56,14 +55,15 @@ pipeline {
         stage('Publish Docker Image to DockerHub') {
             steps {
                 script {
-                    docker.withRegistry('', registryCredential) {
+                    echo "Pushing Docker image: ${registry}:${dockerTag} to DockerHub"
+                    docker.withRegistry('https://index.docker.io/v1/', registryCredential) {
                         dockerImage.push() // Push the Docker image to DockerHub
                     }
                 }
             }
         }
 
-        stage('Remove Unused Docker Image') {
+        stage('Remove Local Docker Image') {
             steps {
                 sh "docker rmi ${registry}:${dockerTag}" // Remove the local Docker image to free up space
             }
@@ -72,19 +72,20 @@ pipeline {
         stage('Docker Pull & Deploy') {
             steps {
                 script {
-                    docker.withRegistry('', registryCredential) {
-                    // Stop any existing container on the same port
-                    sh """
-                    docker ps -q --filter "name=petclinic" | grep -q . && docker stop petclinic && docker rm petclinic || true
-                    """
+                    docker.withRegistry('https://index.docker.io/v1/', registryCredential) {
+                        // Stop any existing container on the same port
+                        sh """
+                        docker ps -q --filter "name=petclinic" | grep -q . && docker stop petclinic && docker rm petclinic || true
+                        """
 
-                    // Pull the Docker image and run the container
-                    sh """
-                    docker pull petclinic:${dockerTag}
-                    docker run -d -p 8081:8081 -t ${registry}:${dockerTag}
-                    """
+                        // Pull the Docker image and run the container
+                        echo "Pulling Docker image: ${registry}:${dockerTag} from DockerHub"
+                        sh """
+                        docker pull ${registry}:${dockerTag}
+                        docker run -d -p 8081:8081 --name petclinic ${registry}:${dockerTag}
+                        """
+                    }
                 }
-              }
             }
         }
     }
