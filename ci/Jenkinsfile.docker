@@ -16,8 +16,8 @@ pipeline {
         registryCredential = 'DOCKERHUB-ACCESS-TOKEN' // Jenkins credential ID for DockerHub
         dockerImage = '' // Placeholder for Docker image object
         dockerTag = "${env.BUILD_NUMBER}" // Use build number as Docker tag
-        ansibleInventory = 'ansible/deployer/inventory.ini' // Path to your Ansible inventory file
-        ansiblePlaybook = 'ansible/deployer/deploy.yml' // Path to your Ansible playbook
+        //ansibleInventory = 'ansible/deployer/inventory.ini' // Path to your Ansible inventory file
+        //ansiblePlaybook = 'ansible/deployer/deploy.yml' // Path to your Ansible playbook
     }
 
     stages {
@@ -69,10 +69,19 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
+        stage('Docker Pull & Deploy') {
             steps {
                 script {
-                    sh "ansible-playbook -i ${ansibleInventory} ${ansiblePlaybook} --extra-vars 'docker_image=${registry} docker_tag=${dockerTag}'" // Execute Ansible playbook with dynamic variables
+                    // Stop any existing container on the same port
+                    sh """
+                    docker ps -q --filter "name=petclinic" | grep -q . && docker stop petclinic && docker rm petclinic || true
+                    """
+
+                    // Pull the Docker image and run the container
+                    sh """
+                    docker pull petclinic:${dockerTag}
+                    docker run -d -p 8081:8081 -t ${registry}:${dockerTag}
+                    """
                 }
             }
         }
