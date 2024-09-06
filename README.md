@@ -198,14 +198,38 @@ pipeline {
     }
     post {
         success {
-            dir('petclinic-app') {
-                junit '**/target/surefire-reports/TEST-*.xml'
-                archiveArtifacts 'target/*.jar'
+            script {
+                // Publish JUnit test results and archive artifacts
+                dir('petclinic-app') {
+                    junit '**/target/surefire-reports/TEST-*.xml'
+                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                }
+
+                // Notify on Slack about successful build
+                slackSend(
+                    channel: params.SlackChannel,
+                    color: 'good',
+                    message: "SUCCESS: ${env.JOB_NAME} build #${env.BUILD_NUMBER} - ${env.BUILD_URL}"
+                )
             }
         }
+
+        failure {
+            script {
+                // Notify on Slack about build failure
+                slackSend(
+                    channel: params.SlackChannel,
+                    color: 'danger',
+                    message: "FAILURE: ${env.JOB_NAME} build #${env.BUILD_NUMBER} - ${env.BUILD_URL}"
+                )
+            }
+        }
+
         always {
-            slackSend (
-                channel: params.SlackChannel,
-                color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger',
-                tokenCredentialId: params.SlackTokenCredentialId,
-                message: "Pipeline Status: ${currentBuild.currentResult} - ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${env
+            cleanWs() // Clean up the workspace after every build
+        }
+    }
+
+    options {
+        buildDiscarder(logRotator(daysToKeepStr: '1', numToKeepStr: '3')) // Keep 3 builds for 1 day
+    }
