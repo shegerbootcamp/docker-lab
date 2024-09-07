@@ -1,6 +1,7 @@
 # deploy.yml
 ---
 - hosts: webservers
-  become: yes
+  remote_user: vagrant
+  become: true
   roles:
     - ./ansible/deployer
