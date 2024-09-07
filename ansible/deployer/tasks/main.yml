@@ -1,45 +1,26 @@
-# tasks/main.yml
 ---
-- name: Check current Docker containers for port conflicts
-  command: docker ps --format "{{.Ports}}"
-  register: docker_ports
-  changed_when: false
+    - name: Check if petclinic container is running
+      shell: docker ps -q --filter "name=petclinic"
+      register: petclinic_running
+      changed_when: false
 
-- name: Set available port
-  set_fact:
-    available_port: "{{ item }}"
-  vars:
-    port_range: "{{ range(docker_port_range.split('-')[0]|int, docker_port_range.split('-')[1]|int + 1)|list }}"
-  loop: "{{ port_range }}"
-  when: >
-    docker_ports.stdout_lines | select("search", "0.0.0.0:{{ item }}") | length == 0
-  register: result
+    - name: Stop and remove the petclinic container if running
+      shell: |
+        docker stop petclinic && docker rm petclinic
+      when: petclinic_running.stdout != ""
 
-- name: Fail if no port is available
-  fail:
-    msg: "No available port found in range {{ docker_port_range }}"
-  when: available_port is not defined
+    - name: Pull the latest Docker image
+      shell: docker pull {{ DOCKER_IMAGE_NAME }}
 
-- name: Pull Docker image
-  docker_image:
-    name: "{{ docker_image }}"
-    tag: "{{ docker_tag }}"
-    source: pull
+    - name: Run the petclinic Docker container
+      shell: |
+        docker run -d --name petclinic -p {{ AppPort }}:8081 {{ DOCKER_IMAGE_NAME }}
 
-- name: Run Docker container
-  docker_container:
-    name: petclinic
-    image: "{{ docker_image }}:{{ docker_tag }}"
-    state: started
-    restart_policy: always
-    published_ports:
-      - "{{ available_port }}:8081"
+    - name: Ensure petclinic container is running
+      shell: docker ps --filter "name=petclinic"
+      register: container_status
 
-- name: Check running Docker containers
-  command: docker ps
-  register: docker_ps
-  changed_when: false
-
-- name: Print running Docker containers
-  debug:
-    msg: "{{ docker_ps.stdout }}"
+    - name: Fail if container is not running
+      fail:
+        msg: "Petclinic container failed to start!"
+      when: container_status.stdout == ""
