@@ -10,10 +10,6 @@
         docker stop petclinic && docker rm petclinic
       when: petclinic_running.stdout != ""
 
-    - name: Pull the latest petclinic Docker image
-      shell: |
-       jf docker pull {{ DOCKER_IMAGE_NAME }}
-     
     - name: Run the petclinic Docker container
       shell: |
         docker run -d --name petclinic -p {{ AppPort }}:{{ AppPort }} {{ DOCKER_IMAGE_NAME }}
