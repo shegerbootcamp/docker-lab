@@ -106,7 +106,7 @@ pipeline {
                 script {
                     sh """
                     ansible-playbook -i ${ansibleInventory} ${ansiblePlaybook} \
-                    --extra-vars "docker_image_name=${DOCKER_IMAGE_NAME} app_port=${params.AppPort}"
+                     --extra-vars "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}"
                     """
                 }
             }
