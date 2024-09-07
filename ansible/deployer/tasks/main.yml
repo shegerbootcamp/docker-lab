@@ -12,11 +12,11 @@
 
     - name: Pull the latest petclinic Docker image
       shell: |
-        docker pull {{ DOCKER_IMAGE_NAME }}
+       jf docker pull {{ DOCKER_IMAGE_NAME }}
      
     - name: Run the petclinic Docker container
       shell: |
-        docker run -d --name petclinic -p {{ AppPort }}:8081 {{ DOCKER_IMAGE_NAME }}
+        docker run -d --name petclinic -p {{ AppPort }}:{{ AppPort }} {{ DOCKER_IMAGE_NAME }}
 
     - name: Ensure petclinic container is running
       shell: docker ps --filter "name=petclinic"
