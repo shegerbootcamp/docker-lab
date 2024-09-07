@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'shegerbootcamp/jenkins-agent:latest'
+            args '-v /var/run/docker.sock:/var/run/docker.sock' // Bind the Docker socket
+        }
+    }
 
     tools {
         jfrog 'jfrog-cli'
