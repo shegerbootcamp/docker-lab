@@ -76,13 +76,13 @@ pipeline {
             }
         }
 
-        stage('Remove Local Docker Image') {
-            steps {
-                script {
-                    sh "docker rmi $DOCKER_IMAGE_NAME" // Remove Docker image from Jenkins server / local
-                }
-            }
-        }
+        //stage('Remove Local Docker Image') {
+        //    steps {
+        //        script {
+        //            sh "docker rmi $DOCKER_IMAGE_NAME" // Remove Docker image from Jenkins server / local
+        //        }
+        //    }
+        //}
 
         stage('Deploy To QA') {
             steps {
