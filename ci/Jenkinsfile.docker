@@ -16,8 +16,8 @@ pipeline {
         registryCredential = 'DOCKERHUB-ACCESS-TOKEN' // Jenkins credential ID for DockerHub
         dockerImage = '' // Placeholder for Docker image object
         dockerTag = "${env.BUILD_NUMBER}" // Use build number as Docker tag
-        ansibleInventory = 'ansible/deployer/inventory.ini' // Path to your Ansible inventory file
-        ansiblePlaybook = 'ansible/deployer/deploy.yml' // Path to your Ansible playbook
+        ansibleInventory = 'ansible/deployer/tests/inventory' // Path to your Ansible inventory file
+        ansiblePlaybook = 'ansible/deployer/tests/test.yml' // Path to your Ansible playbook
     }
 
     stages {
