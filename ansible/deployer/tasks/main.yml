@@ -12,7 +12,7 @@
 
     - name: Pull the latest petclinic Docker image
       shell: |
-        jf docker pull {{ DOCKER_IMAGE_NAME }}
+        docker pull {{ DOCKER_IMAGE_NAME }}
      
     - name: Run the petclinic Docker container
       shell: |
