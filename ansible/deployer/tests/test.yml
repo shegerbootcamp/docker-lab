@@ -3,4 +3,4 @@
   remote_user: vagrant
   become: true
   roles:
-    - ../deployer  # Remove the './' if the role is in the ansible directory
+    - tests/ansible/deployer  # Remove the './' if the role is in the ansible directory
