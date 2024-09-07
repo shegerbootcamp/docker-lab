@@ -84,23 +84,6 @@ pipeline {
             }
         }
 
-        stage('Docker Pull & Deploy') {
-            steps {
-                script {
-                    // Stop any existing container on the same port
-                    sh """
-                    docker ps -q --filter "name=petclinic" | grep -q . && docker stop petclinic && docker rm petclinic || true
-                    """
-
-                    // Pull the Docker image and run the container
-                    sh """
-                    docker pull $DOCKER_IMAGE_NAME
-                    docker run -d --name petclinic -p ${params.AppPort}:8081 $DOCKER_IMAGE_NAME
-                    """
-                }
-            }
-        }
-
         stage('Deploy To QA') {
             steps {
                 script {

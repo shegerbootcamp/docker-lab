@@ -1,5 +1,4 @@
 ---
-
     - name: Check if petclinic container is running
       shell: docker ps -q --filter "name=petclinic"
       register: petclinic_running
@@ -10,9 +9,12 @@
         docker stop petclinic && docker rm petclinic
       when: petclinic_running.stdout != ""
 
+    - name: Pull the latest Docker image
+      shell: docker pull {{ DOCKER_IMAGE_NAME }}
+
     - name: Run the petclinic Docker container
       shell: |
-        docker run -d --name petclinic -p {{ AppPort }}:{{ AppPort }} {{ DOCKER_IMAGE_NAME }}
+        docker run -d --name petclinic -p {{ AppPort }}:8081 {{ DOCKER_IMAGE_NAME }}
 
     - name: Ensure petclinic container is running
       shell: docker ps --filter "name=petclinic"
