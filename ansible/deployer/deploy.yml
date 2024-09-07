@@ -2,6 +2,6 @@
 ---
 - hosts: web
   remote_user: vagrant
-  #become: true
+  become: true
   roles:
     - ./ansible/deployer
