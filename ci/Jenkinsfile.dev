@@ -2,7 +2,7 @@ pipeline {
 
     agent {
         docker {
-            label params.AGENT
+            //label params.AGENT
             alwaysPull true
             image params.DOCKER_BUILD_IMAGE
             registryUrl "https://${params.DOCKER_URL}"
