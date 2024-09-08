@@ -29,7 +29,7 @@ ENV MAVEN_HOME=/usr/share/maven
 ENV PATH=$MAVEN_HOME/bin:$PATH
 
 # Set environment variables for Docker and JFrog
-ENV DOCKER_HOST=tcp://docker:2375
+#ENV DOCKER_HOST=tcp://docker:2375
 ENV JFROG_CLI_HOME=/usr/local/bin/jfrog
 
 # Expose Docker socket for Jenkins to access Docker

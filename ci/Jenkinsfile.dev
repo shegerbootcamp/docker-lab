@@ -3,7 +3,7 @@ pipeline {
         dockerfile {
             filename 'Dockerfile' // Your Dockerfile in the repo.
             dir '.' // Set this if Dockerfile is not in the root directory.
-            additionalBuildArgs '-v /var/run/docker.sock:/var/run/docker.sock' // Bind the Docker socket.
+           // additionalBuildArgs '-v /var/run/docker.sock:/var/run/docker.sock' // Bind the Docker socket.
         }
     }
 
