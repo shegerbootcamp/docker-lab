@@ -87,7 +87,17 @@ pipeline {
         //            sh "docker rmi $DOCKER_IMAGE_NAME" // Remove Docker image from Jenkins server / local
         //        }
         //    }
-        //}
+        //} ansible webserver -m ping -vvv
+
+        stage('Ansible Test') {
+            steps {
+                script {
+                    sh """
+                    ansible -i ${ansibleInventory} web -m ping -vvv
+                    """
+                }
+            }
+        }
 
         stage('Deploy To QA') {
             steps {
