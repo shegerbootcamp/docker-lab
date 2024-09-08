@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'shegerbootcamp/jenkins-agent:latest'
+            args '-v /var/run/docker.sock:/var/run/docker.sock' // Bind the Docker socket
+        }
+    }
 
     parameters {
         string(name: 'GIT_REPO_URL', defaultValue: 'https://github.com/shegerbootcamp/docker-lab.git', description: 'Git repository URL')
