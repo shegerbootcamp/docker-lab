@@ -1,42 +1,47 @@
-# Use an official Jenkins JDK 11 base image
-FROM jenkins/inbound-agent:latest-jdk17
+# Base image with Ubuntu 24.04 LTS and OpenJDK 21
+FROM exoplatform/ubuntu:24.04
+LABEL maintainer="eXo Platform <docker@exoplatform.com>"
 
-# Switch to root to install additional tools
-USER root
+ENV JDK_MAJOR_VERSION 21
 
-# Install required packages: Maven, Docker CLI, JFrog CLI, and any other tools
-RUN apt-get update && \
-    apt-get install -y \
-        git \
-        maven \
-        docker.io \
-        ansible \
-        curl \
-        unzip && \
-    # Install JFrog CLI
-    curl -fL https://getcli.jfrog.io | sh && \
-    mv jfrog /usr/local/bin/jfrog && \
-    chmod +x /usr/local/bin/jfrog && \
-    # Clean up
-    apt-get clean && \
+# Install OpenJDK Java 21 SDK
+RUN apt-get -qq update && \
+    apt-get -qq -y install gnupg ca-certificates curl
+RUN curl -s https://repos.azul.com/azul-repo.key | gpg --dearmor -o /usr/share/keyrings/azul.gpg
+RUN echo "deb [signed-by=/usr/share/keyrings/azul.gpg] https://repos.azul.com/zulu/deb stable main" | tee /etc/apt/sources.list.d/zulu.list
+RUN apt-get -qq update && \
+    apt-get -qq -y install zulu${JDK_MAJOR_VERSION}-jdk
+RUN apt-get -qq -y autoremove && \
+    apt-get -qq -y clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Switch back to the Jenkins agent user
-USER jenkins
+# Install Maven 3.9.9
+RUN curl -fsSL https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz -o maven.tar.gz && \
+    tar -xzf maven.tar.gz -C /opt && \
+    rm maven.tar.gz && \
+    ln -s /opt/apache-maven-3.9.9 /opt/maven
 
-# Set the environment variable for Maven
-ENV MAVEN_HOME=/usr/share/maven
+ENV MAVEN_HOME=/opt/maven
 ENV PATH=$MAVEN_HOME/bin:$PATH
 
-# Set environment variables for Docker and JFrog
-#ENV DOCKER_HOST=tcp://docker:2375
-ENV JFROG_CLI_HOME=/usr/local/bin/jfrog
+# Set JAVA_HOME
+ENV JAVA_HOME /usr/lib/jvm/zulu${JDK_MAJOR_VERSION}-ca-amd64
+
+# Create Jenkins user and group
+RUN groupadd -r jenkins && useradd -r -g jenkins jenkins
+
+# Set the working directory
+WORKDIR /home/jenkins/agent/petclinic
+
+# Copy the project files to the working directory
+#COPY petclinic-app /home/jenkins/agent/petclinic
+
+# Ensure the Jenkins user has correct permissions
+RUN chown -R jenkins:jenkins /home/jenkins/agent/petclinic && \
+    chmod -R 755 /home/jenkins/agent/petclinic
 
 # Expose Docker socket for Jenkins to access Docker
 VOLUME /var/run/docker.sock
 
-# Expose any required ports (if needed, e.g., for debugging)
-# EXPOSE 8080
-
-# Entry point for the Jenkins agent
-ENTRYPOINT ["jenkins-agent"]
+# Run Maven clean install and SonarQube analysis
+#RUN mvn clean install
