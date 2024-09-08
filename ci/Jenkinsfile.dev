@@ -74,27 +74,19 @@ pipeline {
 
         stage('Scan and Push Docker Image') {
             steps {
-                dir('petclinic-app/') {
-                    jf 'docker scan $DOCKER_IMAGE_NAME' // Scan the Docker image for vulnerabilities
-                    jf 'docker push $DOCKER_IMAGE_NAME' // Push the image to Artifactory
+                script {
+                    sh """
+                    jf rt docker-scan $DOCKER_IMAGE_NAME --server-id=yourArtifactoryServer
+                    jf rt docker-push $DOCKER_IMAGE_NAME --server-id=yourArtifactoryServer
+                    """
                 }
             }
         }
 
-        //stage('Remove Local Docker Image') {
-        //    steps {
-        //        script {
-        //            sh "docker rmi $DOCKER_IMAGE_NAME" // Remove Docker image from Jenkins server / local
-        //        }
-        //    }
-        //} ansible webserver -m ping -vvv
-
         stage('Ansible Test') {
             steps {
                 script {
-                    sh """
-                    ansible -i ${ansibleInventory} web -m ping -vvv
-                    """
+                    sh "ansible -i ${ansibleInventory} web -m ping -vvv"
                 }
             }
         }
@@ -114,13 +106,11 @@ pipeline {
     post {
         success {
             script {
-                // Publish JUnit test results and archive artifacts
                 dir('petclinic-app') {
                     junit '**/target/surefire-reports/TEST-*.xml'
                     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
                 }
 
-                // Notify on Slack about successful build
                 slackSend(
                     channel: params.SlackChannel,
                     color: 'good',
@@ -131,7 +121,6 @@ pipeline {
 
         failure {
             script {
-                // Notify on Slack about build failure
                 slackSend(
                     channel: params.SlackChannel,
                     color: 'danger',
