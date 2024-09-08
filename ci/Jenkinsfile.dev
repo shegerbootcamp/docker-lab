@@ -129,9 +129,9 @@ pipeline {
             }
         }
 
-        always {
-            cleanWs() // Clean up the workspace after every build
-        }
+       // always {
+        //    cleanWs() // Clean up the workspace after every build
+       // }
     }
 
     options {
