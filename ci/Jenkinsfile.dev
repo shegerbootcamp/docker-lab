@@ -131,9 +131,7 @@ pipeline {
         }
 
         always {
-            node {
-                cleanWs() // Clean up the workspace after every build
-            }
+            cleanWs() // Clean up the workspace after every build
         }
     }
 
