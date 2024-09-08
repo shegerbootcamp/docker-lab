@@ -1,0 +1,6 @@
+---
+- hosts: web
+  remote_user: vagrant
+  become: true
+  roles:
+    - deployer  # Relative path to the role based on your file structure

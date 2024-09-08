@@ -21,8 +21,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE_NAME = "shegerlab2024.jfrog.io/petclinic/petclinic:${env.BUILD_NUMBER}" // Using build number for Docker image tag
-        ansibleInventory = 'ansible/deployer/tests/inventory' // Path to your Ansible inventory file
-        ansiblePlaybook = 'ansible/deployer/tests/test.yml' // Path to your Ansible playbook
+        ansibleInventory = 'ansible/deployer/inventory.ini' // Path to your Ansible inventory file
+        ansiblePlaybook = 'ansible/deployer/deployer.yml' // Path to your Ansible playbook
     }
 
     stages {
