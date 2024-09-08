@@ -1,5 +1,5 @@
 # Use an official Jenkins JDK 11 base image
-FROM jenkins/inbound-agent:jdk11
+FROM jenkins/inbound-agent:latest-jdk17
 
 # Switch to root to install additional tools
 USER root

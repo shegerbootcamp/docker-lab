@@ -1,9 +1,13 @@
 pipeline {
+
     agent {
-        dockerfile {
-            filename 'Dockerfile' // Your Dockerfile in the repo.
-            dir '.' // Set this if Dockerfile is not in the root directory.
-           // additionalBuildArgs '-v /var/run/docker.sock:/var/run/docker.sock' // Bind the Docker socket.
+        docker {
+            label params.AGENT
+            alwaysPull true
+            image params.DOCKER_BUILD_IMAGE
+            registryUrl "https://${params.DOCKER_URL}"
+            registryCredentialsId params.JFROG_ACCOUNT
+            //args '--entrypoint=\'\' -v /var/run/docker.sock:/var/run/docker.sock'
         }
     }
 
@@ -12,6 +16,12 @@ pipeline {
     }
 
     parameters {
+        string(name: 'DOCKER_BUILD_IMAGE', defaultValue: 'shegerlab2024.jfrog.io/petclinic/jenkins-agent:1.0', description: 'Docker build image')
+        string(name: 'DOCKER_URL', defaultValue: 'shegerlab2024.jfrog.io', description: 'Docker registry URL')
+        string(name: 'JFROG_ACCOUNT', defaultValue: 'docker-jfrog', description: 'JFrog API token credential ID')
+        string(name: 'AGENT', defaultValue: 'docker', description: 'JFrog API token credential ID')
+
+
         string(name: 'ProjectKey', defaultValue: 'petclinic', description: 'SonarQube project key')
         string(name: 'ProjectName', defaultValue: 'petclinic', description: 'SonarQube project name')
         string(name: 'SonarHostUrl', defaultValue: 'http://192.168.92.182:9000', description: 'SonarQube server URL')
