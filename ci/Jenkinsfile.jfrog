@@ -38,11 +38,19 @@ pipeline {
             }
         }
 
-        stage('Scan and push image') {
+        stage('X-ray Scan') {
             steps {
                 dir('petclinic-app/') {
                     // Scan Docker image for vulnerabilities
                     jf 'docker scan $DOCKER_IMAGE_NAME'
+
+                }
+            }
+        }
+
+        stage('Docker Push To Artifactory') {
+            steps {
+                dir('petclinic-app/') {
 
                     // Push image to Artifactory
                     jf 'docker push $DOCKER_IMAGE_NAME'
