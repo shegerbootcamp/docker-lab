@@ -104,7 +104,7 @@ pipeline {
         success {
             dir('petclinic-app') {
                 junit '**/target/surefire-reports/TEST-*.xml' // Archive JUnit test results
-                archiveArtifacts 'target/*.jar' // Archive JAR files
+                archiveArtifacts 'target/*.jar', fingerprint: true // Archive JAR files
             }
         }
 
