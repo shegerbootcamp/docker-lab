@@ -7,6 +7,12 @@ pipeline {
         //shegerlab2024.jfrog.io/petclinic
         DOCKER_IMAGE_NAME = "shegerlab2024.jfrog.io/petclinic/petclinic:1.0.0"
     }
+
+    parameters {
+        
+        string(name: 'SlackChannel', defaultValue: '#jenkins-build-sonar', description: 'Slack channel to send notifications')
+        string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
+    }
     stages {
         stage('Clone') {
             steps {
@@ -49,5 +55,30 @@ pipeline {
                 jf 'rt build-publish'
             }
         }
+    }
+    post {
+        success {
+            dir('petclinic-app') {
+                junit '**/target/surefire-reports/TEST-*.xml' // Archive JUnit test results
+                archiveArtifacts 'target/*.jar', fingerprint: true // Archive JAR files
+            }
+        }
+
+        always {
+            slackSend (
+                channel: params.SlackChannel, // Use the parameterized Slack channel
+                color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger', // Adjust color based on build result
+                tokenCredentialId: params.SlackTokenCredentialId, // Use the parameterized Slack token
+                message: "Pipeline Status: ${currentBuild.currentResult} - ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${env.BUILD_URL}"
+            )
+        }
+
+        cleanup {
+            cleanWs() // Clean up the workspace
+        }
+    }
+
+    options {
+        buildDiscarder(logRotator(daysToKeepStr: '1', numToKeepStr: '3')) // Keep 3 builds for 1 day
     }
 }
