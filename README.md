@@ -39,6 +39,24 @@ This project demonstrates the deployment of the Petclinic application to QA and 
 13. **Cleanup**: Workspace cleanup is performed to save disk space.
 
 
+## Deployment Instructions
+
+1. **Configure Jenkins**:
+   - Install required Jenkins plugins: Git, Maven, JFrog CLI, SonarQube Scanner, Slack Notification.
+   - Set up the required credentials in Jenkins (SonarQube token, Slack token, etc.).
+
+2. **Provision Infrastructure**:
+   - Use Packer to provision the Workstation, QA, and Production environments.
+   - Ensure that Jenkins, SonarQube, and Artifactory servers are up and running.
+
+3. **Run Jenkins Pipeline**:
+   - Trigger the pipeline with the appropriate parameters for the environment (QA or Production).
+   - Monitor the build process and check Slack for build notifications.
+
+4. **Deployment**:
+   - The pipeline deploys the Docker image to the selected environment (QA or Production) using Ansible.
+   - Application runs on the specified port (default 8081)
+
 ### **How to Create a New Jenkins Job for the Project**
 
 1. **Step 1: Access Jenkins Dashboard**
@@ -193,20 +211,3 @@ pipeline {
 }
 ```
 
-## Deployment Instructions
-
-1. **Configure Jenkins**:
-   - Install required Jenkins plugins: Git, Maven, JFrog CLI, SonarQube Scanner, Slack Notification.
-   - Set up the required credentials in Jenkins (SonarQube token, Slack token, etc.).
-
-2. **Provision Infrastructure**:
-   - Use Packer to provision the Workstation, QA, and Production environments.
-   - Ensure that Jenkins, SonarQube, and Artifactory servers are up and running.
-
-3. **Run Jenkins Pipeline**:
-   - Trigger the pipeline with the appropriate parameters for the environment (QA or Production).
-   - Monitor the build process and check Slack for build notifications.
-
-4. **Deployment**:
-   - The pipeline deploys the Docker image to the selected environment (QA or Production) using Ansible.
-   - Application runs on the specified port (default 8081)
