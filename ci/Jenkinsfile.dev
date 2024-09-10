@@ -12,6 +12,7 @@ pipeline {
         string(name: 'SlackChannel', defaultValue: '#jenkins-build-sonar', description: 'Slack channel to send notifications')
         string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
         string(name: 'AppPort', defaultValue: '8081', description: 'Port to run the application')
+        choice(name: 'DeployEnvironment', choices: ['QA', 'Production'], description: 'Choose environment to deploy')
     }
 
     environment {
@@ -74,25 +75,10 @@ pipeline {
             }
         }
 
-        stage('Remove Local Docker Image') {
+        stage('Docker Pull') {
             steps {
                 script {
-                    sh "docker rmi $DOCKER_IMAGE_NAME" // Remove Docker image from Jenkins server / local
-                }
-            }
-        }
-
-        stage('Docker Pull & Deploy') {
-            steps {
-                script {
-                    // Stop any existing container on the same port
-                    sh """
-                    docker ps -q --filter "name=petclinic" | grep -q . && docker stop petclinic && docker rm petclinic || true
-                    """
-
-                    // Pull the Docker image and run the container
-                    // docker run -d --name petclinic -p ${params.AppPort}:8081 $DOCKER_IMAGE_NAME
-
+                    // Pull the Docker image from the registry (JFrog Artifactory)
                     sh """
                     docker pull $DOCKER_IMAGE_NAME
                     """
@@ -101,23 +87,41 @@ pipeline {
         }
 
         stage('Deploy To QA') {
+            when {
+                expression { params.DeployEnvironment == 'QA' }
+            }
             steps {
-                  script {
-                     sh """
-                     ansible-playbook -i ansible/deployer/inventory.ini ansible/deployer/deploy.yml \
-                     --extra-vars "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
-                     --vault-password-file ansible/deployer/vault_password.txt
-                     """
+                script {
+                    sh """
+                    ansible-playbook -i ansible/deployer/inventory.ini ansible/deployer/deployer_qa.yml \
+                    --extra-vars "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
+                    --vault-password-file ansible/deployer/vault_password.txt
+                    """
+                }
+            }
         }
-    }
-}
+
+        stage('Deploy To Production') {
+            when {
+                expression { params.DeployEnvironment == 'Production' }
+            }
+            steps {
+                script {
+                    sh """
+                    ansible-playbook -i ansible/deployer/inventory.ini ansible/deployer/deployer_prod.yml \
+                    --extra-vars "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
+                    --vault-password-file ansible/deployer/vault_password.txt
+                    """
+                }
+            }
+        }
     }
 
     post {
         success {
             dir('petclinic-app') {
                 junit '**/target/surefire-reports/TEST-*.xml' // Archive JUnit test results
-                archiveArtifacts 'target/*.jar', fingerprint: true // Archive JAR files
+                archiveArtifacts 'target/*.jar' // Archive JAR files
             }
         }
 

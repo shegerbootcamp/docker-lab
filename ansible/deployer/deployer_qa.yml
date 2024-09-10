@@ -1,6 +1,6 @@
 # deploy.yml
 ---
-- hosts: webservers
+- hosts: qa
   vars_files:
     - vault.yml
   become: true

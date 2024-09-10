@@ -1,5 +1,5 @@
 ---
 # vars file for deployer
-docker_image: "shegerbootcamp/petclinic-java"
-docker_tag: "latest"
-docker_port: "8081"
+docker_image_name: "{{ DOCKER_IMAGE_NAME }}"  # Passed from Jenkins
+app_port: "{{ AppPort }}"  # Passed from Jenkins
+container_name: "petclinic"

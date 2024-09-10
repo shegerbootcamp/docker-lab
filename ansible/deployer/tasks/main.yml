@@ -1,10 +1,23 @@
-- name: Run petclinic container
-  docker_container:
-    name: petclinic
-    image: "{{ DOCKER_IMAGE_NAME }}"
-    state: started
-    ports:
-      - "{{ AppPort }}:8081"
-    restart_policy: always  # Ensure the container restarts if it crashes
-    detach: true
-    cleanup: true  # Remove intermediate containers
+# Stop and remove the existing container if it exists
+    - name: Stop and remove existing petclinic container
+      docker_container:
+        name: "{{ container_name }}"
+        state: absent  # This stops and removes the container if it exists
+
+    # Pull the latest Docker image
+    - name: Pull the latest petclinic Docker image
+      docker_image:
+        name: "{{ docker_image_name }}"
+        source: pull  # Pull the latest image from the registry
+
+    # Run the petclinic container
+    - name: Run petclinic container
+      docker_container:
+        name: "{{ container_name }}"
+        image: "{{ docker_image_name }}"
+        state: started
+        ports:
+          - "{{ app_port }}:8081"  # Map the given app port to 8081 inside the container
+        restart_policy: always  # Ensure the container restarts if it crashes
+        detach: true  # Run the container in the background
+        cleanup: true  # Remove intermediate containers after build
