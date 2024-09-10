@@ -91,13 +91,26 @@ pipeline {
                     """
 
                     // Pull the Docker image and run the container
+                    // docker run -d --name petclinic -p ${params.AppPort}:8081 $DOCKER_IMAGE_NAME
+
                     sh """
                     docker pull $DOCKER_IMAGE_NAME
-                    docker run -d --name petclinic -p ${params.AppPort}:8081 $DOCKER_IMAGE_NAME
                     """
                 }
             }
         }
+
+        stage('Deploy To QA') {
+            steps {
+                  script {
+                     sh """
+                     ansible-playbook -i ansible/deployer/inventory.ini ansible/deployer/deploy.yml \
+                     --extra-vars "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
+                     --vault-password-file ansible/deployer/vault_password.txt
+                     """
+        }
+    }
+}
     }
 
     post {

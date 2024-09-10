@@ -1,0 +1,89 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_CREDENTIALS_ID = 'DOCKERHUB-ACCESS-TOKEN' // Jenkins credentials for Docker Hub
+    }
+    
+    parameters {
+        string(name: 'ProjectKey', defaultValue: 'petclinic', description: 'SonarQube project key')
+        string(name: 'ProjectName', defaultValue: 'petclinic', description: 'SonarQube project name')
+        string(name: 'SonarHostUrl', defaultValue: 'http://192.168.92.182:9000', description: 'SonarQube server URL')
+        string(name: 'SlackChannel', defaultValue: '#build-status', description: 'Slack channel to send notifications')
+        string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
+    }
+
+    stages {
+        stage('Checkout GitHub Repo') {
+            steps {
+                git 'https://github.com/shegerbootcamp/docker-lab.git' // Clone the GitHub repository
+            }
+        }
+
+        stage('Compile Code') {
+            steps {
+                dir('petclinic-app') {
+                    sh 'mvn compile' // Compile the code
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                dir('petclinic-app') {
+                    sh 'mvn test' // Run the tests
+                }
+            }
+        }
+
+        stage('Build Package') {
+            steps {
+                dir('petclinic-app') {
+                    sh 'mvn -Dmaven.test.failure.ignore=true clean package' // Build the package
+                }
+            }
+        }
+
+        stage('Sonar Static Code Analysis') {
+            steps {
+                dir('petclinic-app') { // Ensure SonarQube runs within the project directory
+                    withCredentials([string(credentialsId: 'jenkins-sonar-token', variable: 'sonar_token')]) {
+                        sh """
+                        mvn sonar:sonar \
+                            -Dsonar.projectKey=${params.ProjectKey} \
+                            -Dsonar.projectName='${params.ProjectName}' \
+                            -Dsonar.host.url=${params.SonarHostUrl} \
+                            -Dsonar.login=${sonar_token}
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            dir('petclinic-app') {
+                junit '**/target/surefire-reports/TEST-*.xml' // Archive JUnit test results
+                archiveArtifacts 'target/*.jar' // Archive JAR files
+            }
+        }
+
+        always {
+            slackSend (
+                channel: params.SlackChannel, // Use the parameterized Slack channel
+                color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger', // Set color based on build result
+                tokenCredentialId: params.SlackTokenCredentialId, // Use the parameterized Slack token
+                message: "Pipeline Status: ${currentBuild.currentResult} - ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${env.BUILD_URL}"
+            )
+        }
+
+        cleanup {
+            cleanWs() // Clean up the workspace
+        }
+    }
+
+    options {
+        buildDiscarder(logRotator(daysToKeepStr: '3')) // Rotate logs, keep builds for 3 days
+    }
+}
