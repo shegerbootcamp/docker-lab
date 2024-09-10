@@ -9,7 +9,7 @@ pipeline {
         string(name: 'ProjectKey', defaultValue: 'petclinic', description: 'SonarQube project key')
         string(name: 'ProjectName', defaultValue: 'petclinic', description: 'SonarQube project name')
         string(name: 'SonarHostUrl', defaultValue: 'http://192.168.92.182:9000', description: 'SonarQube server URL')
-        string(name: 'SonarTokenCredentialId', defaultValue: 'jenkins-sonar-token', description: 'SonarQube token credential ID') // Use default credential ID
+        string(name: 'SonarTokenCredentialId', defaultValue: 'jenkins-sonar-token', description: 'SonarQube token credential ID')
         string(name: 'SlackChannel', defaultValue: '#build-status', description: 'Slack channel to send notifications')
         string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
         string(name: 'AppPort', defaultValue: '8081', description: 'Port to run the application')
@@ -17,7 +17,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE_NAME = "shegerlab2024.jfrog.io/petclinic/petclinic:${env.BUILD_NUMBER}" // Using build number for Docker image tag
+        DOCKER_IMAGE_NAME = "shegerlab2024.jfrog.io/petclinic/petclinic:${env.BUILD_NUMBER}" // Docker image tag
     }
 
     stages {
@@ -35,22 +35,22 @@ pipeline {
             }
         }
 
-       stage('Sonar Static Code Analysis') {
+        stage('Sonar Static Code Analysis') {
             steps {
                 dir('petclinic-app') {
                     withCredentials([string(credentialsId: params.SonarTokenCredentialId, variable: 'SONAR_TOKEN')]) {
-                        sh '''
+                        sh """
                         mvn sonar:sonar \
                             -Dsonar.projectKey=${ProjectKey} \
                             -Dsonar.projectName=${ProjectName} \
                             -Dsonar.host.url=${SonarHostUrl} \
-                            -Dsonar.login=$SONAR_TOKEN
-                        '''
+                            -Dsonar.login=$SONAR_TOKEN \
+                            -Dsonar.java.binaries=target/classes
+                        """
                     }
                 }
             }
         }
-
 
         stage('Build Package') {
             steps {
@@ -60,16 +60,13 @@ pipeline {
             }
         }
 
-        stage('Upload Package To Artifactory') {
+        stage('Upload to Artifactory') {
             steps {
-              dir('petclinic-app') { 
-                script {
-                    def artifactoryUrl = 'https://shegerlab2024.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
-                    def localJarPath = 'target/*-SNAPSHOT.jar'
-
-                     jf 'rt u ${localJarPath} ${artifactoryUrl}'
+                dir('petclinic-app') {
+                    script {
+                        jf 'rt u target petclinic-jar/'
+                    }
                 }
-              }  
             }
         }
 
@@ -83,16 +80,16 @@ pipeline {
 
         stage('X-Ray Scan') {
             steps {
-                dir('petclinic-app/') {
-                    jf 'docker scan $DOCKER_IMAGE_NAME' // Scan the Docker image for vulnerabilities
+                dir('petclinic-app') {
+                    jf 'docker scan $DOCKER_IMAGE_NAME' // Scan Docker image for vulnerabilities
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                dir('petclinic-app/') {
-                    jf 'docker push $DOCKER_IMAGE_NAME' // Push the image to Artifactory
+                dir('petclinic-app') {
+                    jf 'docker push $DOCKER_IMAGE_NAME' // Push Docker image to Artifactory
                 }
             }
         }
@@ -100,40 +97,33 @@ pipeline {
         stage('Docker Pull') {
             steps {
                 script {
-                    // Pull the Docker image from the registry (JFrog Artifactory)
-                    sh """
-                    docker pull $DOCKER_IMAGE_NAME
-                    """
+                    sh "docker pull $DOCKER_IMAGE_NAME" // Pull Docker image from Artifactory
                 }
             }
         }
 
-        stage('Deploy To QA') {
+        stage('Deploy QA | PROD') {
             when {
-                expression { params.DeployEnvironment == 'QA' }
+                expression { params.DeployEnvironment == 'QA' || params.DeployEnvironment == 'Production' }
             }
             steps {
                 script {
+                    def playbook = params.DeployEnvironment == 'QA' ? 'ansible/deployer/deployer_qa.yml' : 'ansible/deployer/deployer_prod.yml'
+
                     sh """
-                    ansible-playbook -i ansible/deployer/inventory.ini ansible/deployer/deployer_qa.yml \
+                    ansible-playbook -i ansible/deployer/inventory.ini ${playbook} \
                     --extra-vars "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
                     --vault-password-file ansible/deployer/vault_password.txt
                     """
                 }
             }
         }
-
-        stage('Deploy To Production') {
-            when {
-                expression { params.DeployEnvironment == 'Production' }
-            }
+        
+        stage('Publish Build Info') {
             steps {
                 script {
-                    sh """
-                    ansible-playbook -i ansible/deployer/inventory.ini ansible/deployer/deployer_prod.yml \
-                    --extra-vars "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
-                    --vault-password-file ansible/deployer/vault_password.txt
-                    """
+                    // Publish build info to Artifactory
+                    jf 'rt build-publish'
                 }
             }
         }
@@ -149,9 +139,9 @@ pipeline {
 
         always {
             slackSend (
-                channel: params.SlackChannel, // Use the parameterized Slack channel
-                color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger', // Adjust color based on build result
-                tokenCredentialId: params.SlackTokenCredentialId, // Use the parameterized Slack token
+                channel: params.SlackChannel, // Use parameterized Slack channel
+                color: currentBuild.result == 'SUCCESS' ? 'good' : 'danger', // Color based on build result
+                tokenCredentialId: params.SlackTokenCredentialId, // Use parameterized Slack token
                 message: "Pipeline Status: ${currentBuild.currentResult} - ${env.JOB_NAME} #${env.BUILD_NUMBER} - ${env.BUILD_URL}"
             )
         }
