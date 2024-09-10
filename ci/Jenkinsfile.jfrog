@@ -19,12 +19,33 @@ pipeline {
                 git branch: 'master', url: "https://github.com/shegerbootcamp/docker-lab.git"
             }
         }
+
+        stage('Test') {
+            steps {
+                dir('petclinic-app') { // Change directory to 'petclinic-app'
+                    sh 'mvn test' // Unit Test
+                }
+            }
+        }
         
         stage('Build Package') {
             steps {
                 dir('petclinic-app') { // Change directory to 'petclinic-app'
-                    sh 'mvn clean install -DskipTests=true' // Build the package without running tests
+                    sh 'mvn -Dmaven.test.failure.ignore=true clean package' // Build the package without running tests
                 }
+            }
+        }
+
+        stage('Upload Package To Artifactory') {
+            steps {
+              dir('petclinic-app') { 
+                script {
+                    def artifactoryUrl = 'https://shegerlab2024.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
+                    def localJarPath = 'target/*-SNAPSHOT.jar'
+
+                     jf 'rt u ${localJarPath} ${artifactoryUrl}'
+                }
+              }  
             }
         }
 
@@ -48,7 +69,7 @@ pipeline {
             }
         }
 
-        stage('Docker Push To Artifactory') {
+        stage('Push Image To Artifactory') {
             steps {
                 dir('petclinic-app/') {
 
@@ -68,7 +89,7 @@ pipeline {
     post {
         success {
             dir('petclinic-app') {
-               // junit '**/target/surefire-reports/TEST-*.xml' // Archive JUnit test results
+               junit '**/target/surefire-reports/TEST-*.xml' // Archive JUnit test results
                 archiveArtifacts 'target/*.jar' // Archive JAR files
             }
         }

@@ -36,7 +36,7 @@ pipeline {
         stage('Build Package') {
             steps {
                 dir('petclinic-app') { // Change directory to 'petclinic-app'
-                    sh 'mvn clean install -DskipTests=true' // Build the package without running tests
+                    sh 'mvn -Dmaven.test.failure.ignore=true clean package' // Build the package without running tests
                 }
             }
         }

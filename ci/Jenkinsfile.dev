@@ -60,6 +60,19 @@ pipeline {
             }
         }
 
+        stage('Upload Package To Artifactory') {
+            steps {
+              dir('petclinic-app') { 
+                script {
+                    def artifactoryUrl = 'https://shegerlab2024.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
+                    def localJarPath = 'target/*-SNAPSHOT.jar'
+
+                     jf 'rt u ${localJarPath} ${artifactoryUrl}'
+                }
+              }  
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -68,10 +81,17 @@ pipeline {
             }
         }
 
-        stage('Scan and Push Docker Image') {
+        stage('X-Ray Scan') {
             steps {
                 dir('petclinic-app/') {
                     jf 'docker scan $DOCKER_IMAGE_NAME' // Scan the Docker image for vulnerabilities
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                dir('petclinic-app/') {
                     jf 'docker push $DOCKER_IMAGE_NAME' // Push the image to Artifactory
                 }
             }
