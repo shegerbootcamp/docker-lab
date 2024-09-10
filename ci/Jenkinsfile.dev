@@ -9,7 +9,8 @@ pipeline {
         string(name: 'ProjectKey', defaultValue: 'petclinic', description: 'SonarQube project key')
         string(name: 'ProjectName', defaultValue: 'petclinic', description: 'SonarQube project name')
         string(name: 'SonarHostUrl', defaultValue: 'http://192.168.92.182:9000', description: 'SonarQube server URL')
-        string(name: 'SlackChannel', defaultValue: '#jenkins-build-sonar', description: 'Slack channel to send notifications')
+        string(name: 'SonarTokenCredentialId', defaultValue: 'jenkins-sonar-token', description: 'SonarQube token credential ID') // Use default credential ID
+        string(name: 'SlackChannel', defaultValue: '#build-status', description: 'Slack channel to send notifications')
         string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
         string(name: 'AppPort', defaultValue: '8081', description: 'Port to run the application')
         choice(name: 'DeployEnvironment', choices: ['QA', 'Production'], description: 'Choose environment to deploy')
@@ -34,26 +35,27 @@ pipeline {
             }
         }
 
-        stage('Sonar Static Code Analysis') {
+       stage('Sonar Static Code Analysis') {
             steps {
                 dir('petclinic-app') {
-                    withCredentials([string(credentialsId: 'jenkins-sonar-token', variable: 'SONAR_TOKEN')]) {
-                        sh """
+                    withCredentials([string(credentialsId: params.SonarTokenCredentialId, variable: 'SONAR_TOKEN')]) {
+                        sh '''
                         mvn sonar:sonar \
-                            -Dsonar.projectKey=${params.ProjectKey} \
-                            -Dsonar.projectName='${params.ProjectName}' \
-                            -Dsonar.host.url=${params.SonarHostUrl} \
-                            -Dsonar.login=${SONAR_TOKEN}
-                        """
+                            -Dsonar.projectKey=${ProjectKey} \
+                            -Dsonar.projectName=${ProjectName} \
+                            -Dsonar.host.url=${SonarHostUrl} \
+                            -Dsonar.login=$SONAR_TOKEN
+                        '''
                     }
                 }
             }
         }
 
+
         stage('Build Package') {
             steps {
                 dir('petclinic-app') {
-                    sh 'mvn clean install -DskipTests=true' // Build the package without running tests
+                    sh 'mvn -Dmaven.test.failure.ignore=true clean package' // Build the package without running tests
                 }
             }
         }
