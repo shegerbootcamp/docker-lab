@@ -3,3 +3,4 @@
 docker_image_name: "{{ DOCKER_IMAGE_NAME }}"  # Passed from Jenkins
 app_port: "{{ AppPort }}"  # Passed from Jenkins
 container_name: "petclinic"
+jfrog_url: "{{ JFrogURL }}"

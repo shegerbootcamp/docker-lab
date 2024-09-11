@@ -14,10 +14,13 @@ pipeline {
         string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
         string(name: 'AppPort', defaultValue: '8081', description: 'Port to run the application')
         choice(name: 'DeployEnvironment', choices: ['QA', 'Production'], description: 'Choose environment to deploy')
+        string(name: 'JFrogURL', defaultValue: 'shegerlab2024.jfrog.io', description: 'JFrog Artifactory URL')
+        string(name: 'RepositoryName', defaultValue: 'petclinic', description: 'Repository name for Docker image') // Parameterize repository name
+        string(name: 'ImageName', defaultValue: 'petclinic', description: 'Docker image name') // Parameterize image name
     }
 
     environment {
-        DOCKER_IMAGE_NAME = "shegerlab2024.jfrog.io/petclinic/petclinic:${env.BUILD_NUMBER}" // Docker image tag
+        DOCKER_IMAGE_NAME = "${params.JFrogURL}/${params.RepositoryName}/${params.ImageName}:${env.BUILD_NUMBER}" // Parameterized repository and image names
     }
 
     stages {
@@ -41,9 +44,9 @@ pipeline {
                     withCredentials([string(credentialsId: params.SonarTokenCredentialId, variable: 'SONAR_TOKEN')]) {
                         sh """
                         mvn sonar:sonar \
-                            -Dsonar.projectKey=${ProjectKey} \
-                            -Dsonar.projectName=${ProjectName} \
-                            -Dsonar.host.url=${SonarHostUrl} \
+                            -Dsonar.projectKey=${params.ProjectKey} \
+                            -Dsonar.projectName=${params.ProjectName} \
+                            -Dsonar.host.url=${params.SonarHostUrl} \
                             -Dsonar.login=$SONAR_TOKEN \
                             -Dsonar.java.binaries=target/classes
                         """
@@ -73,7 +76,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("$DOCKER_IMAGE_NAME", 'petclinic-app')
+                    docker.build("${DOCKER_IMAGE_NAME}", 'petclinic-app')
                 }
             }
         }
@@ -81,7 +84,7 @@ pipeline {
         stage('X-Ray Scan') {
             steps {
                 dir('petclinic-app') {
-                    jf 'docker scan $DOCKER_IMAGE_NAME' // Scan Docker image for vulnerabilities
+                    jf "docker scan ${DOCKER_IMAGE_NAME}" // Scan Docker image for vulnerabilities
                 }
             }
         }
@@ -89,15 +92,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 dir('petclinic-app') {
-                    jf 'docker push $DOCKER_IMAGE_NAME' // Push Docker image to Artifactory
-                }
-            }
-        }
-
-        stage('Docker Pull') {
-            steps {
-                script {
-                    sh "docker pull $DOCKER_IMAGE_NAME" // Pull Docker image from Artifactory
+                    jf "docker push ${DOCKER_IMAGE_NAME}" // Push Docker image to Artifactory
                 }
             }
         }
@@ -112,7 +107,7 @@ pipeline {
 
                     sh """
                     ansible-playbook -i ansible/deployer/inventory.ini ${playbook} \
-                    --extra-vars "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
+                    --extra-vars JFrogURL=${params.JFrogURL}" "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
                     --vault-password-file ansible/deployer/vault_password.txt
                     """
                 }
