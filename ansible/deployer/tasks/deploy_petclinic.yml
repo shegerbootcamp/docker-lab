@@ -22,7 +22,7 @@
     image: "{{ docker_image_name }}"
     state: started
     ports:
-      - "{{ app_port }}:8081"  # Map the given app port to 8081 inside the container
+      - "{{ app_port }}:{{ app_port }}"  # Map the given app port to 8081 inside the container
     restart_policy: always  # Ensure the container restarts if it crashes
     detach: true  # Run the container in the background
     cleanup: true  # Remove intermediate containers after build
