@@ -2,7 +2,7 @@
 
 ---
 - name: Log in to JFrog Artifactory Docker registry
-  shell: jf docker login {{ jfrog_url }} --username {{ jfrog_username }} --password {{ jfrog_password }}
+  shell: docker login {{ jfrog_url }} --username {{ jfrog_username }} --password {{ jfrog_password }}
 
 - name: Stop and remove the existing petclinic container if it exists
   docker_container:
