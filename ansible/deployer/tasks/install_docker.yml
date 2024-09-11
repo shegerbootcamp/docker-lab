@@ -1,8 +1,11 @@
-# tasks/install_docker.yml
-
 ---
 - name: Gather information about installed packages
   package_facts:
+
+- name: Check if Docker is installed
+  shell: dpkg -l | grep -i docker-ce
+  register: docker_installed
+  ignore_errors: true
 
 - name: Install Docker prerequisites
   apt:
@@ -23,18 +26,18 @@
   apt_repository:
     repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
     state: present
-  when: ansible_facts.packages.docker-ce is not defined  # Only add the repository if Docker isn't installed
+  when: docker_installed.rc != 0  # Only add the repository if Docker is not installed
 
 - name: Update apt package index
   apt:
     update_cache: yes
-  when: ansible_facts.packages.docker-ce is not defined  # Only update if Docker isn't installed
+  when: docker_installed.rc != 0  # Only update if Docker is not installed
 
 - name: Install Docker
   apt:
     name: docker-ce
     state: latest
-  when: ansible_facts.packages.docker-ce is not defined  # Only install if Docker isn't installed
+  when: docker_installed.rc != 0  # Only install if Docker is not installed
 
 - name: Start Docker service
   systemd:
