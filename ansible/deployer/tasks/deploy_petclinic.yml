@@ -1,23 +1,28 @@
-# Stop and remove the existing container if it exists
-    - name: Stop and remove existing petclinic container
-      docker_container:
-        name: "{{ container_name }}"
-        state: absent  # This stops and removes the container if it exists
+# tasks/deploy_petclinic.yml
 
-    # Pull the latest Docker image
-    - name: Pull the latest petclinic Docker image
-      docker_image:
-        name: "{{ docker_image_name }}"
-        source: pull  # Pull the latest image from the registry
+---
+- name: Log in to JFrog Artifactory Docker registry
+  shell: jf docker login {{ jfrog_url }} --username {{ jfrog_username }} --password {{ jfrog_password }}
+  args:
+    warn: false  # To prevent warnings from the shell task
 
-    # Run the petclinic container
-    - name: Run petclinic container
-      docker_container:
-        name: "{{ container_name }}"
-        image: "{{ docker_image_name }}"
-        state: started
-        ports:
-          - "{{ app_port }}:8081"  # Map the given app port to 8081 inside the container
-        restart_policy: always  # Ensure the container restarts if it crashes
-        detach: true  # Run the container in the background
-        cleanup: true  # Remove intermediate containers after build
+- name: Stop and remove the existing petclinic container if it exists
+  docker_container:
+    name: "{{ container_name }}"
+    state: absent  # This stops and removes the container if it exists
+
+- name: Pull the latest petclinic Docker image
+  docker_image:
+    name: "{{ docker_image_name }}"
+    source: pull  # Pull the latest image from the registry
+
+- name: Run petclinic container
+  docker_container:
+    name: "{{ container_name }}"
+    image: "{{ docker_image_name }}"
+    state: started
+    ports:
+      - "{{ app_port }}:8081"  # Map the given app port to 8081 inside the container
+    restart_policy: always  # Ensure the container restarts if it crashes
+    detach: true  # Run the container in the background
+    cleanup: true  # Remove intermediate containers after build
