@@ -107,7 +107,7 @@ pipeline {
 
                     sh """
                     ansible-playbook -i ansible/deployer/inventory.ini ${playbook} \
-                    --extra-vars JFrogURL=${params.JFrogURL} "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
+                    --extra-vars "JFrogURL=${params.JFrogURL} DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME} AppPort=${params.AppPort}" \
                     --vault-password-file ansible/deployer/vault_password.txt
                     """
                 }
