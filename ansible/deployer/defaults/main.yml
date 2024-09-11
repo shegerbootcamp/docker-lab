@@ -1,2 +1,6 @@
 ---
 # defaults file for deployer
+JFrogURL: "https://shegerlab2024.jfrog.io"  # Default JFrog URL
+docker_image_name: "shegerlab2024.jfrog.io/petclinic/petclinic:latest"  # Default Docker image
+app_port: 8081  # Default port for the application
+container_name: "petclinic"  # Default container name
