@@ -8,13 +8,13 @@ pipeline {
     parameters {
         string(name: 'ProjectKey', defaultValue: 'petclinic', description: 'SonarQube project key')
         string(name: 'ProjectName', defaultValue: 'petclinic', description: 'SonarQube project name')
-        string(name: 'SonarHostUrl', defaultValue: 'http://192.168.92.182:9000', description: 'SonarQube server URL')
-        string(name: 'SonarTokenCredentialId', defaultValue: 'jenkins-sonar-token', description: 'SonarQube token credential ID')
+        string(name: 'SonarHostUrl', defaultValue: 'http://http://192.168.201.13:9000', description: 'SonarQube server URL')
+        string(name: 'SonarTokenCredentialId', defaultValue: 'SONAR-TOKEN', description: 'SonarQube token credential ID')
         string(name: 'SlackChannel', defaultValue: '#build-status', description: 'Slack channel to send notifications')
         string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
         string(name: 'AppPort', defaultValue: '8081', description: 'Port to run the application')
         choice(name: 'DeployEnvironment', choices: ['QA', 'Production'], description: 'Choose environment to deploy')
-        string(name: 'JFrogURL', defaultValue: 'shegerlab2024.jfrog.io', description: 'JFrog Artifactory URL')
+        string(name: 'JFrogURL', defaultValue: 'elias1985.jfrog.io', description: 'JFrog Artifactory URL')
         string(name: 'RepositoryName', defaultValue: 'petclinic', description: 'Repository name for Docker image') // Parameterize repository name
         string(name: 'ImageName', defaultValue: 'petclinic', description: 'Docker image name') // Parameterize image name
     }
