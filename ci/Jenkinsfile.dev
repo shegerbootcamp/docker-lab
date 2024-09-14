@@ -44,11 +44,11 @@ pipeline {
                     withCredentials([string(credentialsId: params.SonarTokenCredentialId, variable: 'SONAR_TOKEN')]) {
                         sh """
                         mvn sonar:sonar \
-                            -Dsonar.projectKey=${params.ProjectKey} \
-                            -Dsonar.projectName=${params.ProjectName} \
-                            -Dsonar.host.url=${params.SonarHostUrl} \
-                            -Dsonar.login=$SONAR_TOKEN \
-                            -Dsonar.java.binaries=target/classes
+                           # -Dsonar.projectKey=${params.ProjectKey} \
+                           # -Dsonar.projectName=${params.ProjectName} \
+                           # -Dsonar.host.url=${params.SonarHostUrl} \
+                           # -Dsonar.login=$SONAR_TOKEN \
+                          #  -Dsonar.java.binaries=target/classes
                         """
                     }
                 }
