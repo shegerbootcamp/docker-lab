@@ -4,8 +4,8 @@ pipeline {
         jfrog 'jfrog-cli'
     }
     environment {
-        //shegerlab2024.jfrog.io/petclinic
-        DOCKER_IMAGE_NAME = "shegerlab2024.jfrog.io/petclinic/petclinic:1.0.0"
+        //abrish.jfrog.io/petclinic
+        DOCKER_IMAGE_NAME = "abrish.jfrog.io/petclinic/petclinic:1.0.0"
     }
 
     parameters {
@@ -16,7 +16,7 @@ pipeline {
     stages {
         stage('Clone') {
             steps {
-                git branch: 'master', url: "https://github.com/shegerbootcamp/docker-lab.git"
+                git branch: 'master', url: "https://github.com/Acky19/docker-lab.git"
             }
         }
 
@@ -40,7 +40,7 @@ pipeline {
             steps {
               dir('petclinic-app') { 
                 script {
-                    def artifactoryUrl = 'https://shegerlab2024.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
+                    def artifactoryUrl = 'abrish.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
                     def localJarPath = 'target/*-SNAPSHOT.jar'
 
                      jf 'rt u ${localJarPath} ${artifactoryUrl}'
