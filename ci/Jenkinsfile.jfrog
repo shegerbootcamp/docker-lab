@@ -4,7 +4,7 @@ pipeline {
         jfrog 'jfrog-cli'
     }
     environment {
-        abrish.jfrog.io/petclinic
+        //abrish.jfrog.io/petclinic
         DOCKER_IMAGE_NAME = "abrish.jfrog.io/petclinic/petclinic:1.0.0"
     }
 
