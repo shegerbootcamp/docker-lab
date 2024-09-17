@@ -12,7 +12,7 @@ pipeline {
     }
 
     environment {
-        registry = "Acky19/petclinic-java" // Docker image name
+        registry = "acky19/petclinic-java" // Docker image name
         registryCredential = 'DOCKERHUB-ACCESS-TOKEN' // Jenkins credential ID for DockerHub
         dockerImage = '' // Placeholder for Docker image object
         dockerTag = "${env.BUILD_NUMBER}" // Use build number as Docker tag
