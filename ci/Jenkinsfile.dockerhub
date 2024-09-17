@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'GIT_REPO_URL', defaultValue: 'https://github.com/shegerbootcamp/docker-lab.git', description: 'Git repository URL')
-        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Git branch name')
+        string(name: 'GIT_REPO_URL', defaultValue: 'https://github.com/Acky19/docker-lab.git', description: 'Git repository URL')
+        string(name: 'GIT_BRANCH', defaultValue: 'master', description: 'Git branch name')
     }
 
     tools {
@@ -12,7 +12,7 @@ pipeline {
     }
 
     environment {
-        registry = "shegerbootcamp/petclinic-java" // Docker image name
+        registry = "Acky19/petclinic-java" // Docker image name
         registryCredential = 'DOCKERHUB-ACCESS-TOKEN' // Jenkins credential ID for DockerHub
         dockerImage = '' // Placeholder for Docker image object
         dockerTag = "${env.BUILD_NUMBER}" // Use build number as Docker tag
