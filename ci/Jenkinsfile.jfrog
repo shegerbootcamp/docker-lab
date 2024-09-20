@@ -40,7 +40,7 @@ pipeline {
             steps {
               dir('petclinic-app') { 
                 script {
-                    def artifactoryUrl = 'abrish.jfrog.io/artifactory/jen-int-jfo-docker/petclinic.jar'
+                    def artifactoryUrl = 'abrish.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
                     def localJarPath = 'target/*-SNAPSHOT.jar'
 
                      jf 'rt u ${localJarPath} ${artifactoryUrl}'
