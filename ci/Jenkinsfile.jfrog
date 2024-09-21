@@ -10,7 +10,7 @@ pipeline {
 
     parameters {
         
-        string(name: 'SlackChannel', defaultValue: '#jenkins-build-sonar', description: 'Slack channel to send notifications')
+        string(name: 'SlackChannel', defaultValue: 'jenkins-integration-jford', description: 'Slack channel to send notifications')
         string(name: 'SlackTokenCredentialId', defaultValue: 'SLACK-TOKEN', description: 'Slack token credential ID')
     }
     stages {
