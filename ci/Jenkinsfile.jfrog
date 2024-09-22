@@ -40,10 +40,10 @@ pipeline {
             steps {
               dir('petclinic-app') { 
                 script {
-                    def artifactoryUrl = 'https://abrish.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
-                    def localJarPath = 'target/spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar'
+                    //def artifactoryUrl = 'https://abrish.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
+                    //def localJarPath = '/target/spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar'
 
-                     jf 'rt u ${localJarPath} ${artifactoryUrl}'
+                     jf 'rt u target/spring-petclinic-2.2.0.BUILD-SNAPSHOT.jar  https://abrish.jfrog.io/artifactory/petclinic-generic-local/petclinic.jar'
                 }
               }  
             }
